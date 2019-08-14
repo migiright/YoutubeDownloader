@@ -28,11 +28,19 @@ namespace YoutubeDownloader
 				Console.WriteLine($"{ConfigFileName} not found.");
 				return;
 			}
-			string key;
+			string key, user = null, password = null;
 			using (var sr = new StreamReader(ConfigFileName, Encoding.ASCII)) {
 				key = sr.ReadLine();
+				if (!sr.EndOfStream) {
+					user = sr.ReadLine();
+					password = sr.ReadLine();
+				}
 			}
 			Console.WriteLine($"key: {key}");
+			if(user != null) {
+				Console.WriteLine($"username: {user}{Environment.NewLine}"
+					+ $"password: {password}");
+			}
 
 			string id;
 			bool idIsUserName;
@@ -87,12 +95,15 @@ namespace YoutubeDownloader
 				foreach (var vi in videoIds) {
 					List<(string ext, int quality)> formats;
 					{
+						Console.WriteLine($"id: {vi}");
+
 						var psi = new ProcessStartInfo("youtube-dl.exe") {
 							RedirectStandardOutput = true,
 							RedirectStandardError = true,
 							UseShellExecute = false,
 							CreateNoWindow = true,
-							Arguments = $"-F https://www.youtube.com/watch?v={vi}",
+							Arguments = (user != null ? $"-u {user} -p {password} " : "")
+								+ $"-F https://www.youtube.com/watch?v={vi}",
 						};
 						string[] output;
 						string error;
@@ -138,7 +149,8 @@ namespace YoutubeDownloader
 								RedirectStandardError = true,
 								UseShellExecute = false,
 								CreateNoWindow = true,
-								Arguments = $"-f bestvideo[ext={ext}]+bestaudio[ext={audioExt}]"
+								Arguments = (user != null ? $"-u {user} -p {password} " : "")
+									+ $"-f bestvideo[ext={ext}]+bestaudio[ext={audioExt}]"
 									+ $" https://www.youtube.com/watch?v={vi}",
 							};
 							Console.WriteLine($"-f bestvideo[ext={ext}]+bestaudio[ext={audioExt}]"
