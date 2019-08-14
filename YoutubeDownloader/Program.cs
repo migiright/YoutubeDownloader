@@ -35,14 +35,16 @@ namespace YoutubeDownloader
 			Console.WriteLine($"key: {key}");
 
 			string id;
+			bool idIsUserName;
 			{
-				var match = Regex.Match(args[0], @"^https:\/\/www\.youtube\.com\/channel\/(\w+)\/?.*$");
+				var match = Regex.Match(args[0], @"^https:\/\/www\.youtube\.com\/(channel|user)\/(\w+)\/?.*$");
 				if (!match.Success) {
 					Console.WriteLine("invalid url.");
 					return;
 				}
-				id = match.Groups[1].Value;
-				Console.WriteLine($"id: {id}");
+				idIsUserName = match.Groups[1].Value == "user";
+				id = match.Groups[2].Value;
+				Console.WriteLine($"{(idIsUserName ? "user name:" : "id")}: {id}");
 			}
 
 			using(var client = new HttpClient()) {
@@ -50,7 +52,7 @@ namespace YoutubeDownloader
 				{
 					var result = client.GetAsync(
 						"https://www.googleapis.com/youtube/v3/channels"
-						+ $"?key={key}&part=contentDetails&id={id}")
+						+ $"?key={key}&part=contentDetails&{(idIsUserName ? "forUsername" : "id")}={id}")
 						.Result;
 					var json = JObject.Parse(result.Content.ReadAsStringAsync().Result);
 					playlistId = json.SelectToken("items[0].contentDetails.relatedPlaylists.uploads").ToString();
